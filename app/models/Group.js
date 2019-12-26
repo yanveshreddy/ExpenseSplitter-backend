@@ -18,6 +18,11 @@ let groupSchema = new Schema({
     required: true,
     default: ''
   },
+  groupDescription:{
+    type: String,
+    required: true,
+    default: ''
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId, ref:'User'
   },

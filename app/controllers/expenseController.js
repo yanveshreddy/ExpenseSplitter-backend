@@ -46,14 +46,28 @@ let getSingleExpenseDetails = (req, res) => {
 let createExpense = (req, res) => {
 
     const expenseId = shortid.generate();
-
-
+    if(req.body.paidBy !="undefined" && typeof(req.body.paidBy) !="undefined")
+    {
+        const PaidBy=JSON.parse(req.body.PaidBy);
+        
+    }
+    if(req.body.usersInvolved !="undefined" && typeof(req.body.usersInvolved) !="undefined")
+    {
+        const usersInvolved=JSON.parse(req.body.usersInvolved);
+    }
+   
+    
     let newExpense = new ExpenseModel({
 
         expenseId: expenseId,
-        expenseName:req.body.expenseName,
-        createdBy:req.body.userId,
-        users:req.body.userObj
+        groupId: req.body.groupId,
+        expenseTitle:req.body.expenseTitle,
+        expenseDescription:req.body.expenseDescription,
+        expenseAmount: req.body.expenseAmount,
+        createdBy: req.body.createdBy,
+        paidBy: PaidBy,
+        usersInvolved: usersInvolved
+        
     })
 
     newExpense.save((err, result) => {
@@ -71,8 +85,6 @@ let createExpense = (req, res) => {
         }
 
     })
-
-
 }
 
 //end createExpense function

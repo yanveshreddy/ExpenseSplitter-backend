@@ -166,7 +166,6 @@ let loginFunction = (req, res) => {
                 } else if (isMatch) {
                     let retrievedUserDetailsObj = retrievedUserDetails.toObject()
                     delete retrievedUserDetailsObj.password
-                    delete retrievedUserDetailsObj._id
                     delete retrievedUserDetailsObj.__v
                     delete retrievedUserDetailsObj.createdOn
                     delete retrievedUserDetailsObj.modifiedOn
@@ -420,7 +419,7 @@ let resetPassword = (req, res) => {
                     else {
                         let updatedUserObj = updatedUser.toObject()
                         delete updatedUserObj.password;
-                        delete updatedUserObj._id;
+                        
                         delete updatedUserObj.__v;
 
                         let apiResponse = response.generate(false, 'Your Password Is Reset Successfully', 200, updatedUserObj)
@@ -441,7 +440,7 @@ let resetPassword = (req, res) => {
 let getAllUser = (req, res) => {
 
     UserModel.find()
-        .select('-password -__v -_id')
+        .select('-password -__v ')
         .lean()
         .exec((err, result) => {
             if (err) {
@@ -464,7 +463,7 @@ let getAllUser = (req, res) => {
 let getSingleUser = (req, res) => {
 
     UserModel.findOne({ 'userId': req.params.userId })
-        .select('-password -__v -_id')
+        .select('-password -__v ')
         .lean()
         .exec((err, result) => {
             if (err) {

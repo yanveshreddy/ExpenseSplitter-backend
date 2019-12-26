@@ -16,7 +16,7 @@ const groupModel = mongoose.model('Group');
 
 let getSingleGroupDetails = (req, res) => {
 
-    groupModel.findOne({ 'groupId': req.params.groupId })
+    groupModel.findOne({ 'groupId': req.query.groupId })
     .select('-__v -_id')
     .lean()
     .exec((err, result) => {
@@ -46,14 +46,16 @@ let getSingleGroupDetails = (req, res) => {
 let createGroup = (req, res) => {
 
     const groupId = shortid.generate();
-
+    const groupUsers=JSON.parse(req.body.users);
+   // let assigneeObj=JSON.parse(req.body.assignee);
 
     let newgroup = new groupModel({
 
         groupId: groupId,
         groupName:req.body.groupName,
-        createdBy:req.body.userId,
-        users:req.body.userObj
+        groupDescription:req.body.groupDescription,
+        createdBy:req.body.createdBy,
+        users:groupUsers
     })
 
     newgroup.save((err, result) => {
@@ -66,8 +68,8 @@ let createGroup = (req, res) => {
         else {
             let apiResponse = response.generate(false, "created succesfully", 200, result);
             res.send(apiResponse);
-            // logger.info(result);
-            eventEmitter.emit('sendgroupCreatedMail', result);
+            logger.info(result);
+            //eventEmitter.emit('sendgroupCreatedMail', result);
         }
 
     })
@@ -125,13 +127,67 @@ let updateGroup = (req, res) => {
 }
 //end updategroup function
 /****************************************************************************************************/
+//start getAllUsersForAGroup function
+
+let getAllUsersForAGroup = (req, res) => {
+
+    groupModel.findOne({'groupId': req.query.groupId})
+             .populate({path:'users',select:'firstName'})
+             .exec((err, result) => {
+
+            if (err) {
+                let apiResponse = response.generate(true, 'Failed to fetch list of users in a group ', 403, null)
+                res.send(apiResponse)
+            } else if (check.isEmpty(result)) {
+                let apiResponse = response.generate(true, 'group  not found', 500, null)
+                res.send(apiResponse)
+            } else {
+                let apiResponse = response.generate(false, 'List of users in a group', 200, result)
+                logger.info(result);
+                res.send(apiResponse)
+            }
+        })
+}
+
+//end getAllUsersForAGroup function
+/****************************************************************************************************/
+
+//start getAllGroupsForaUser function
+
+let getAllGroupsForaUser = (req, res) => {
+    const userId=JSON.parse(req.query.userId);
+   // let ObjectId = mongoose.Types.ObjectId; 
+    //const userId= new ObjectId(req.query.userId)
+   
+    groupModel.find({'users': mongoose.Types.ObjectId(userId)})
+              .populate({ path: 'createdBy', select: 'firstName' })
+              .populate({path:'users',select:'firstName'})
+            .exec((err, result) => {
+
+                if (err) {
+                    let apiResponse = response.generate(true, 'Failed to fetch list of groups ', 403, null)
+                    logger.error(req.query.userId)
+                    res.send(apiResponse)
+                } else if (check.isEmpty(result)) {
+                    let apiResponse = response.generate(true, 'groups Are not found', 500, null)
+                    res.send(apiResponse)
+                } else {
+                    let apiResponse = response.generate(false, 'List of groups', 200, result);
+                    logger.info(result);
+                    res.send(apiResponse)
+                }
+            })
+}
+
+//end getAllGroupsForaUser function
+/****************************************************************************************************/
 
 //start getAllgroups function
 
 let getAllGroups = (req, res) => {
 
     groupModel.find()
-        .select(' -__v -_id')
+        .select(' -_v -_id')
         .lean()
         .exec((err, result) => {
 
@@ -157,4 +213,6 @@ module.exports = {
     getAllGroups: getAllGroups,
     updateGroup: updateGroup,
     createGroup: createGroup,
+    getAllGroupsForaUser:getAllGroupsForaUser,
+    getAllUsersForAGroup:getAllUsersForAGroup
 }// end exports

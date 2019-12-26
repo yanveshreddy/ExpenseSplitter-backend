@@ -16,8 +16,13 @@ let expenseSchema = new Schema({
         unique: true
     },
     groupId: {
-        type: mongoose.Schema.Types.ObjectId, ref:'Group',
+        type: String,
         required: true,
+    },
+    expenseTitle:{
+        type: String,
+        required: true,
+        default: ''
     },
     expenseDescription: {
         type: String,
