@@ -133,6 +133,7 @@ let getAllUsersForAGroup = (req, res) => {
 
     groupModel.findOne({'groupId': req.query.groupId})
              .populate({path:'users',select:'firstName'})
+             .populate({path:'createdBy',select:'firstName'})
              .exec((err, result) => {
 
             if (err) {
@@ -155,6 +156,7 @@ let getAllUsersForAGroup = (req, res) => {
 //start getAllGroupsForaUser function
 
 let getAllGroupsForaUser = (req, res) => {
+    
     const userId=JSON.parse(req.query.userId);
    // let ObjectId = mongoose.Types.ObjectId; 
     //const userId= new ObjectId(req.query.userId)

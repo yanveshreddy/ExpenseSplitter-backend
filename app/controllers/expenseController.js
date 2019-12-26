@@ -12,6 +12,35 @@ const ExpenseModel = mongoose.model('Expense');
 
 /*Controller Functions */
 
+let getOutstandingBalances =(req,res)=>{
+
+    let user_Id=JSON.parse(req.query.user_Id);
+
+    ExpenseModel.aggregate([{$match:{'paidBy.user':mongoose.Types.ObjectId(user_Id)}}
+    ,{$group:{'user_Id':mongoose.Types.ObjectId('paidBy.user'),'totalAmountLent':{$sum:['paidBy.amountLent']}}}
+    ]).exec((err,result)=>{
+
+        if (err) {
+            logger.error(err.message, 'expense Controller: getOutstandingBalances', 10)
+            let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
+            res.send(apiResponse);
+        }
+        else if (check.isEmpty(result)) {
+            logger.info('No expense Found', 'expense Controller: getOutstandingBalances')
+            let apiResponse = response.generate(true, "No records found", 404, null);
+            res.send(apiResponse);
+        }
+        else {
+            let apiResponse = response.generate(false, "data Found", 200, result);
+            logger.info(result)
+            res.send(apiResponse);
+        }
+    
+    })
+
+    }
+
+
 // start getSingleExpenseDetails function 
 
 let getSingleExpenseDetails = (req, res) => {
@@ -46,15 +75,21 @@ let getSingleExpenseDetails = (req, res) => {
 let createExpense = (req, res) => {
 
     const expenseId = shortid.generate();
-    if(req.body.paidBy !="undefined" && typeof(req.body.paidBy) !="undefined")
-    {
-        const PaidBy=JSON.parse(req.body.PaidBy);
+    logger.info(req.body.paidBy);
+
+    
+    let usersInvolved=JSON.parse(req.body.usersInvolved);
+    let paidBy1=JSON.parse(req.body.paidBy);
+
+    // if(req.body.paidBy !="undefined" && typeof(req.body.paidBy) !="undefined")
+    // {
+    //     const PaidBy=JSON.parse(req.body.PaidBy);
         
-    }
-    if(req.body.usersInvolved !="undefined" && typeof(req.body.usersInvolved) !="undefined")
-    {
-        const usersInvolved=JSON.parse(req.body.usersInvolved);
-    }
+    // }
+    // if(req.body.usersInvolved !="undefined" && typeof(req.body.usersInvolved) !="undefined")
+    // {
+    //     const usersInvolved=JSON.parse(req.body.usersInvolved);
+    // }
    
     
     let newExpense = new ExpenseModel({
@@ -65,7 +100,7 @@ let createExpense = (req, res) => {
         expenseDescription:req.body.expenseDescription,
         expenseAmount: req.body.expenseAmount,
         createdBy: req.body.createdBy,
-        paidBy: PaidBy,
+        paidBy: paidBy1,
         usersInvolved: usersInvolved
         
     })
@@ -81,7 +116,7 @@ let createExpense = (req, res) => {
             let apiResponse = response.generate(false, "created succesfully", 200, result);
             res.send(apiResponse);
             // logger.info(result);
-            eventEmitter.emit('sendExpenseCreatedMail', result);
+            //eventEmitter.emit('sendExpenseCreatedMail', result);
         }
 
     })
@@ -164,7 +199,7 @@ let getAllExpenses = (req, res) => {
 /****************************************************************************************************/
 
 module.exports = {
-    
+    getOutstandingBalances:getOutstandingBalances,
     getSingleExpenseDetails: getSingleExpenseDetails,
     getAllExpenses: getAllExpenses,
     updateExpense: updateExpense,
