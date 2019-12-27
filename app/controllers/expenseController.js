@@ -6,10 +6,11 @@ const logger = require('./../libs/loggerLib');
 
 const check = require('../libs/checkLib');
 const nodemailer = require('nodemailer');
+const mailLib =require('../libs/mailLib')
 
 const ExpenseModel = mongoose.model('Expense');
 
-
+const ExpenseHistoryModel = mongoose.model('ExpenseHistory')
 /*Controller Functions */
 
 let getOutstandingBalances =(req,res)=>{
@@ -117,7 +118,8 @@ let createExpense = (req, res) => {
             let apiResponse = response.generate(false, "created succesfully", 200, result);
             res.send(apiResponse);
             // logger.info(result);
-            //eventEmitter.emit('sendExpenseCreatedMail', result);
+            eventEmitter.emit('saveExpenseHistory',result)
+            eventEmitter.emit('sendExpenseCreatedMail', result);
         }
 
     })
@@ -198,6 +200,83 @@ let getAllExpenses = (req, res) => {
 
 //end getAllExpenses function
 /****************************************************************************************************/
+eventEmitter.on('saveExpenseHistory',(data) =>{
+
+        let newExpenseHistory =new ExpenseHistoryModel({
+
+            expenseId:data.expenseId,
+            expenseAmount:data.expenseAmount,
+            actionType: createExpense,
+            actionDoneBy: data.createdBy,
+            message: "created expense"
+
+
+        })
+        newExpenseHistory.save((err,result)=>{
+            if(err){
+                logger.error(err.message, 'expense Controller: saveExpenseHistory', 10)
+            }
+            else{
+                logger.error("history saved succesfully", 'expense Controller: saveExpenseHistory', 10)
+            }
+        })
+
+})
+
+
+
+
+
+
+//send email for  meeting creation code start
+eventEmitter.on('sendMeetingCreatedMail', (data) => {
+    if (data.userId) {
+        UserModel.findOne({ userId: data.userId }, (err, userDetails) => {
+            if (err) {
+                logger.error('Error while finding user', 'meetingController: findUser()', 7)
+            }
+            else if (check.isEmpty(userDetails)) {
+
+                logger.error('No User Found', 'meetingController: findUser()', 7)
+            }
+            else if (userDetails) {
+                let transporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: 'meetingplanner.helpdesk@gmail.com',
+                        pass: 'Mphelpdesk@004'
+                    }
+                });
+                let mailOptions = {
+                    from: 'meetingplanner.helpdesk@gmail.com',
+                    to: userDetails.email,
+                    subject: '"Meeting Created Alert"',
+                    html: `<h2>Meeting scheduled</h2><br><h4>The Meeting ${data.title} has been scheduled </h4>
+                          <p>Meeting will be start in ${data.start}</p>`
+
+                }
+                transporter.sendMail(mailOptions, function (err, data) {
+                    if (err) {
+                        logger.error('Mail sending Failed','sendMeetingCreatedMail');
+                    }
+                    else {
+                        logger.info('Created alert email sent sucesfully','sendMeetingCreatedMail');
+                    }
+                })
+
+            }
+        });
+
+    } else {
+        logger.error('userId is missing','sendMeetingCreatedMail');
+    }
+});
+
+
+//send email for meeting creation  code is end
+
+
+
 
 module.exports = {
     getOutstandingBalances:getOutstandingBalances,
