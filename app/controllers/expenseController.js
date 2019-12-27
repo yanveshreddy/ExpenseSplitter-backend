@@ -177,9 +177,9 @@ let updateExpense = (req, res) => {
 
 let getAllExpenses = (req, res) => {
 
-    ExpenseModel.find()
-        .select(' -__v -_id')
-        .lean()
+    ExpenseModel.find({'groupId':req.params.groupId})
+                .populate({ path: 'createdBy', select: 'firstName' })
+                .populate({path:'paidBy.user',select:'firstName'})
         .exec((err, result) => {
 
             if (err) {
