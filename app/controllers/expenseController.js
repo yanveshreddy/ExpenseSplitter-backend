@@ -135,10 +135,21 @@ let createExpense = (req, res) => {
 
 let updateExpense = (req, res) => {
 
-    let options = req.body;
+    let usersInvolved=JSON.parse(req.body.usersInvolved);
+    let paidBy=JSON.parse(req.body.paidBy);
+
+    // let optionsobj = { groupId: req.body.groupId,
+    // expenseTitle:req.body.expenseTitle,
+    // expenseDescription:req.body.expenseDescription,
+    // expenseAmount: req.body.expenseAmount,
+    // createdBy: req.body.createdBy,
+    // paidBy: paidBy1,
+    // usersInvolved: usersInvolved
+    // }
+    
     let expenseId=req.params.expenseId;
 
-    ExpenseModel.update({ 'expenseId': req.params.expenseId }, options, { multi: true }).exec((err, result) => {
+    ExpenseModel.findOne({ 'expenseId': req.params.expenseId }).exec((err, result) => {
         if (err) {
             logger.error(err.message, 'expense Controller: updateExpense', 10)
             let apiResponse = response.generate(true, "Failed to find expense Details", 500, null);
@@ -150,29 +161,37 @@ let updateExpense = (req, res) => {
             res.send(apiResponse);
         }
         else {
-            let apiResponse = response.generate(false, "expense updated succesfully", 200, result);
-            res.send(apiResponse);
-            console.log(expenseId);
 
-            ExpenseModel.findOne({ 'expenseId': expenseId }).exec((err, result) => {
+           // result.groupId = req.body.groupId
+            result.expenseTitle=req.body.expenseTitle
+            result.expenseDescription=req.body.expenseDescription
+            result.expenseAmount= req.body.expenseAmount
+           // result.createdBy= req.body.createdBy
+            result.paidBy= paidBy
+            result.usersInvolved= usersInvolved
 
-                if (err) {
-                    logger.error(err.message, 'expense Controller: getSingleExpenseDetails', 10)
-                   // let apiResponse = response.generate(true, "Failed to find expense Details", 500, null);
-                   // res.send(apiResponse);
+            result.save((err,data)=>{
+
+                if(err)
+                {
+                    logger.error(err.message, 'updateExpense: failed to save', 10)
                 }
-                else {
-                    // let apiResponse = response.generate(false, "Details Found", 200, result);
-                    // res.send(apiResponse);
-                    console.log(result);
-                    if(result){
-                        eventEmitter.emit('saveUpdateExpenseHistory',result);
-                        eventEmitter.emit('sendExpenseUpdateMail', result);
+                else
+                {
+                    let apiResponse = response.generate(false, "expense updated succesfully", 200, data);
+                    res.send(apiResponse);
+                    console.log(expenseId);
+
+                    if(data){
+                        eventEmitter.emit('saveUpdateExpenseHistory',data);
+                        eventEmitter.emit('sendExpenseUpdateMail', data);
                     }
-                    
+        
                 }
-
             })
+
+
+           
         }
     })
 }
@@ -202,6 +221,33 @@ let getAllExpenses = (req, res) => {
 }
 
 //end getAllExpenses function
+
+let deleteExpense = (req, res) => {
+
+    ExpenseModel.findOneAndRemove({ 'expenseId': req.params.expenseId }).select(' -__v -_id').exec((err, result) => {
+        if (err) {
+            console.log(err)
+            logger.error(err.message, 'expenseController: deleteExpense', 10)
+            let apiResponse = response.generate(true, 'Failed To delete expense', 500, null)
+            res.send(apiResponse)
+        } else if (check.isEmpty(result)) {
+            logger.info('No expense Found', 'expenseController: deleteExpense')
+            let apiResponse = response.generate(true, 'No expense Found', 404, null)
+            res.send(apiResponse)
+        } else {
+
+            // req.body.previous = req.body.previous.split('/uploads/')[1]
+            // fs.unlinkSync('./uploads/' +  req.body.previous);
+
+            let apiResponse = response.generate(false, 'Deleted the expense successfully', 200, result)
+            res.send(apiResponse);
+            eventEmitter.emit('saveDeleteExpenseHistory',result);
+            eventEmitter.emit('sendExpenseDeleteMail', result);
+        }
+    });
+
+}
+
 /****************************************************************************************************/
 eventEmitter.on('saveCreateExpenseHistory',(data) =>{
 
@@ -233,7 +279,7 @@ eventEmitter.on('saveUpdateExpenseHistory',(data) =>{
         expenseAmount:data.expenseAmount,
         actionType: "update Expense",
         actionDoneBy: data.createdBy,
-        message: "update Expense"
+        message: "updated Expense"
 
 
     })
@@ -248,11 +294,33 @@ eventEmitter.on('saveUpdateExpenseHistory',(data) =>{
 
 })
 
+eventEmitter.on('saveDeleteExpenseHistory',(data) =>{
+
+    let newExpenseHistory =new ExpenseHistoryModel({
+
+        expenseId:data.expenseId,
+        expenseAmount:data.expenseAmount,
+        actionType: "delete Expense",
+        actionDoneBy: data.createdBy,
+        message: "deleted Expense"
+
+
+    })
+    newExpenseHistory.save((err,result)=>{
+        if(err){
+            logger.error(err.message, 'expense Controller: saveDeleteExpenseHistory', 10)
+        }
+        else{
+            logger.error("history saved succesfully", 'expense Controller: saveDeleteExpenseHistory', 10)
+        }
+    })
+
+})
 
 
 
 
-//send email for  meeting creation code start
+//send email for  expense creation code start
 eventEmitter.on('sendExpenseCreatedMail', (data) => {
 
     if (data.groupId) {
@@ -260,43 +328,48 @@ eventEmitter.on('sendExpenseCreatedMail', (data) => {
         .populate({path:'users',select:'firstName email'})
         .exec((err, groupDetails) => {
             if (err) {
-                logger.error('Error while finding user', 'meetingController: findUser()', 7)
+                logger.error('Error while finding user', 'expenseController: findUser()', 7)
             }
             else if (check.isEmpty(groupDetails)) {
 
-                logger.error('No User Found', 'meetingController: findUser()', 7)
+                logger.error('No User Found', 'expenseController: findUser()', 7)
             }
             else  {
                   
                     let users=groupDetails.users;
-                    let toList=[];
-                    
+                    console.log(users);
+                    let toList=new Array();
+                   
                     users.forEach(element => {
-                        this.toList.push(users.email);
-                      });
+                            logger.info(element.email)
+                         toList.push(element.email);
+                           
+                        })
+                  
+                      
                         let text="Expense"+data.expenseTitle+"created by"+data.createdBy.firsName+"with amount"+data.expenseAmount;
                 mailLib.sendMail(toList,"Expense Creation Alert",text);
             }
         });
 
     } else {
-        logger.error('userId is missing','sendMeetingCreatedMail');
+        logger.error('userId is missing','sendexpenseCreatedMail');
     }
 });
 
 
-//send email for meeting creation  code is end
+//send email for expense creation  code is end
 eventEmitter.on('sendExpenseUpdateMail', (data) => {
     if (data.groupId) {
         groupModel.findOne({ groupId: data.groupId })
         .populate({path:'users',select:'firstName email'})
         .exec((err, groupDetails) => {
             if (err) {
-                logger.error('Error while finding user', 'meetingController: findUser()', 7)
+                logger.error('Error while finding user', 'expenseController: findUser()', 7)
             }
             else if (check.isEmpty(groupDetails)) {
 
-                logger.error('No User Found', 'meetingController: findUser()', 7)
+                logger.error('No User Found', 'expenseController: findUser()', 7)
             }
             else  {
                   
@@ -304,7 +377,7 @@ eventEmitter.on('sendExpenseUpdateMail', (data) => {
                     let toList=[];
                     
                     users.forEach(element => {
-                        this.toList.push(users.email);
+                        toList.push(users.email);
                       });
                         let text="Expense"+data.expenseTitle+"updated by"+data.createdBy.firsName+"with amount"+data.expenseAmount;
                 mailLib.sendMail(toList,"Expense Update Alert",text);
@@ -312,7 +385,37 @@ eventEmitter.on('sendExpenseUpdateMail', (data) => {
         });
 
     } else {
-        logger.error('userId is missing','sendMeetingCreatedMail');
+        logger.error('userId is missing','sendexpenseCreatedMail');
+    }
+});
+//send email for expense creation  code is end
+eventEmitter.on('sendExpenseDeleteMail', (data) => {
+    if (data.groupId) {
+        groupModel.findOne({ groupId: data.groupId })
+        .populate({path:'users',select:'firstName email'})
+        .exec((err, groupDetails) => {
+            if (err) {
+                logger.error('Error while finding user', 'expenseController: findUser()', 7)
+            }
+            else if (check.isEmpty(groupDetails)) {
+
+                logger.error('No User Found', 'expenseController: findUser()', 7)
+            }
+            else  {
+                  
+                    let users=groupDetails.users;
+                    let toList=[];
+                    
+                    users.forEach(element => {
+                        toList.push(users.email);
+                      });
+                        let text="Expense"+data.expenseTitle+"deleted by"+data.createdBy.firsName;
+                mailLib.sendMail(toList,"Expense Delete Alert",text);
+            }
+        });
+
+    } else {
+        logger.error('userId is missing','sendExpenseDeleteMail');
     }
 });
 
@@ -325,4 +428,5 @@ module.exports = {
     getAllExpenses: getAllExpenses,
     updateExpense: updateExpense,
     createExpense: createExpense,
+    deleteExpense:deleteExpense
 }// end exports

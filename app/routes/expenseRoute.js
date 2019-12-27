@@ -192,7 +192,7 @@ module.exports.setRouter = (app) => {
      *    }
      */
 
-    //app.post(`${baseUrl}/:expenseId/deleteExpense`,auth.isAuthorized,expenseController.deleteExpense);
+    app.post(`${baseUrl}/:expenseId/deleteExpense`,auth.isAuthorized,expenseController.deleteExpense);
     /**
      * @api {post} /api/v1/expenses/:expenseId/deleteExpense [Api to delete group]
      * @apiVersion 1.0.0
