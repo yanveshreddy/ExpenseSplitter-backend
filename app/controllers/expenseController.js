@@ -9,7 +9,9 @@ const nodemailer = require('nodemailer');
 const mailLib =require('../libs/mailLib')
 
 const ExpenseModel = mongoose.model('Expense');
-
+const groupModel = mongoose.model('Group');
+let events = require('events');
+let eventEmitter = new events.EventEmitter();
 const ExpenseHistoryModel = mongoose.model('ExpenseHistory')
 /*Controller Functions */
 
@@ -118,7 +120,7 @@ let createExpense = (req, res) => {
             let apiResponse = response.generate(false, "created succesfully", 200, result);
             res.send(apiResponse);
             // logger.info(result);
-            eventEmitter.emit('saveExpenseHistory',result)
+            eventEmitter.emit('saveCreateExpenseHistory',result)
             eventEmitter.emit('sendExpenseCreatedMail', result);
         }
 
@@ -164,6 +166,7 @@ let updateExpense = (req, res) => {
                     // res.send(apiResponse);
                     console.log(result);
                     if(result){
+                        eventEmitter.emit('saveUpdateExpenseHistory',result);
                         eventEmitter.emit('sendExpenseUpdateMail', result);
                     }
                     
@@ -200,13 +203,13 @@ let getAllExpenses = (req, res) => {
 
 //end getAllExpenses function
 /****************************************************************************************************/
-eventEmitter.on('saveExpenseHistory',(data) =>{
+eventEmitter.on('saveCreateExpenseHistory',(data) =>{
 
         let newExpenseHistory =new ExpenseHistoryModel({
 
             expenseId:data.expenseId,
             expenseAmount:data.expenseAmount,
-            actionType: createExpense,
+            actionType: "create expense",
             actionDoneBy: data.createdBy,
             message: "created expense"
 
@@ -214,12 +217,34 @@ eventEmitter.on('saveExpenseHistory',(data) =>{
         })
         newExpenseHistory.save((err,result)=>{
             if(err){
-                logger.error(err.message, 'expense Controller: saveExpenseHistory', 10)
+                logger.error(err.message, 'expense Controller: saveCreateExpenseHistory', 10)
             }
             else{
-                logger.error("history saved succesfully", 'expense Controller: saveExpenseHistory', 10)
+                logger.error("history saved succesfully", 'expense Controller: saveCreateExpenseHistory')
             }
         })
+
+})
+eventEmitter.on('saveUpdateExpenseHistory',(data) =>{
+
+    let newExpenseHistory =new ExpenseHistoryModel({
+
+        expenseId:data.expenseId,
+        expenseAmount:data.expenseAmount,
+        actionType: "update Expense",
+        actionDoneBy: data.createdBy,
+        message: "update Expense"
+
+
+    })
+    newExpenseHistory.save((err,result)=>{
+        if(err){
+            logger.error(err.message, 'expense Controller: saveUpdateExpenseHistory', 10)
+        }
+        else{
+            logger.error("history saved succesfully", 'expense Controller: saveUpdateExpenseHistory', 10)
+        }
+    })
 
 })
 
@@ -227,43 +252,30 @@ eventEmitter.on('saveExpenseHistory',(data) =>{
 
 
 
-
 //send email for  meeting creation code start
-eventEmitter.on('sendMeetingCreatedMail', (data) => {
-    if (data.userId) {
-        UserModel.findOne({ userId: data.userId }, (err, userDetails) => {
+eventEmitter.on('sendExpenseCreatedMail', (data) => {
+
+    if (data.groupId) {
+        groupModel.findOne({ groupId: data.groupId })
+        .populate({path:'users',select:'firstName email'})
+        .exec((err, groupDetails) => {
             if (err) {
                 logger.error('Error while finding user', 'meetingController: findUser()', 7)
             }
-            else if (check.isEmpty(userDetails)) {
+            else if (check.isEmpty(groupDetails)) {
 
                 logger.error('No User Found', 'meetingController: findUser()', 7)
             }
-            else if (userDetails) {
-                let transporter = nodemailer.createTransport({
-                    service: 'gmail',
-                    auth: {
-                        user: 'meetingplanner.helpdesk@gmail.com',
-                        pass: 'Mphelpdesk@004'
-                    }
-                });
-                let mailOptions = {
-                    from: 'meetingplanner.helpdesk@gmail.com',
-                    to: userDetails.email,
-                    subject: '"Meeting Created Alert"',
-                    html: `<h2>Meeting scheduled</h2><br><h4>The Meeting ${data.title} has been scheduled </h4>
-                          <p>Meeting will be start in ${data.start}</p>`
-
-                }
-                transporter.sendMail(mailOptions, function (err, data) {
-                    if (err) {
-                        logger.error('Mail sending Failed','sendMeetingCreatedMail');
-                    }
-                    else {
-                        logger.info('Created alert email sent sucesfully','sendMeetingCreatedMail');
-                    }
-                })
-
+            else  {
+                  
+                    let users=groupDetails.users;
+                    let toList=[];
+                    
+                    users.forEach(element => {
+                        this.toList.push(users.email);
+                      });
+                        let text="Expense"+data.expenseTitle+"created by"+data.createdBy.firsName+"with amount"+data.expenseAmount;
+                mailLib.sendMail(toList,"Expense Creation Alert",text);
             }
         });
 
@@ -274,6 +286,35 @@ eventEmitter.on('sendMeetingCreatedMail', (data) => {
 
 
 //send email for meeting creation  code is end
+eventEmitter.on('sendExpenseUpdateMail', (data) => {
+    if (data.groupId) {
+        groupModel.findOne({ groupId: data.groupId })
+        .populate({path:'users',select:'firstName email'})
+        .exec((err, groupDetails) => {
+            if (err) {
+                logger.error('Error while finding user', 'meetingController: findUser()', 7)
+            }
+            else if (check.isEmpty(groupDetails)) {
+
+                logger.error('No User Found', 'meetingController: findUser()', 7)
+            }
+            else  {
+                  
+                    let users=groupDetails.users;
+                    let toList=[];
+                    
+                    users.forEach(element => {
+                        this.toList.push(users.email);
+                      });
+                        let text="Expense"+data.expenseTitle+"updated by"+data.createdBy.firsName+"with amount"+data.expenseAmount;
+                mailLib.sendMail(toList,"Expense Update Alert",text);
+            }
+        });
+
+    } else {
+        logger.error('userId is missing','sendMeetingCreatedMail');
+    }
+});
 
 
 
