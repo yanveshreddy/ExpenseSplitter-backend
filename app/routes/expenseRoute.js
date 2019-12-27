@@ -8,7 +8,7 @@ module.exports.setRouter = (app) => {
 
     let baseUrl = `${appConfig.apiVersion}/expenses`;
 
-    app.get(`${baseUrl}/getOutstandingBalances`,auth.isAuthorized, expenseController.getOutstandingBalances);
+    app.get(`${baseUrl}/:user_Id/getOutstandingBalances`,auth.isAuthorized, expenseController.getOutstandingBalances);
 
     app.get(`${baseUrl}/:groupId/view/all`,auth.isAuthorized, expenseController.getAllExpenses);
 

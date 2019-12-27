@@ -14,9 +14,9 @@ const ExpenseModel = mongoose.model('Expense');
 
 let getOutstandingBalances =(req,res)=>{
 
-    let user_Id=JSON.parse(req.query.user_Id);
+    //let user_Id=JSON.parse(req.query.user_Id);
 
-    ExpenseModel.aggregate([{$match:{'paidBy.user':mongoose.Types.ObjectId(user_Id)}}
+    ExpenseModel.aggregate([{$match:{'paidBy.user':mongoose.Types.ObjectId(req.params.user_Id)}}
     ,{$group:{'user_Id':mongoose.Types.ObjectId('paidBy.user'),'totalAmountLent':{$sum:['paidBy.amountLent']}}}
     ]).exec((err,result)=>{
 
@@ -46,9 +46,10 @@ let getOutstandingBalances =(req,res)=>{
 let getSingleExpenseDetails = (req, res) => {
 
     ExpenseModel.findOne({ 'expenseId': req.params.expenseId })
-    .select('-__v -_id')
-    .lean()
-    .exec((err, result) => {
+                .populate({ path: 'createdBy', select: 'firstName' })
+                .populate({path:'paidBy.user',select:'firstName'})
+                .populate({path:'usersInvolved.user',select:'firstName'})
+       .exec((err, result) => {
         if (err) {
             logger.error(err.message, 'expense Controller: getSingleExpenseDetails', 10)
             let apiResponse = response.generate(true, "Failed to find expense Details", 500, null);
