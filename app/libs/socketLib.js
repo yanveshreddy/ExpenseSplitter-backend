@@ -59,28 +59,28 @@ let setServer = (server) => {
         }) // end of listening set-user event
 
 
-        //create notify code start
-        socket.on('Create-Expense', (data) => {
+        // //create notify code start
+        // socket.on('Create-Expense', (data) => {
 
-            myIo.emit(`${data.userId} create`, data)
-        })
-        //create notify code end
+        //     myIo.to(socket.room).broadcast.emit(`${data.userId} create`, data)
+        // })
+        // //create notify code end
 
 
-        //edit notify code start
-        socket.on('Update-Expense', (data) => {
-            console.log(data);
-            // myIo.broadcast.emit(data.userId, data)
-            myIo.emit(`${data.userId} update`,data);
-        })
-        //edit notify code end
+        // //edit notify code start
+        // socket.on('Update-Expense', (data) => {
+        //     console.log(data);
+        //     // myIo.broadcast.emit(data.userId, data)
+        //     myIo.to(socket.room).broadcast.emit(`${data.userId} update`,data);
+        // })
+        // //edit notify code end
 
-        //Delete code start
-        socket.on('Delete-Expense', (data) => {
+        // //Delete code start
+        // socket.on('Delete-Expense', (data) => {
 
-            myIo.emit(`${data.userId} delete`, data)
-        })
-        //Delete code end
+        //     myIo.to(socket.room).broadcast.emit(`${data.userId} delete`, data)
+        // })
+        // //Delete code end
 
 
         socket.on('disconnect', () => {
@@ -102,40 +102,7 @@ let setServer = (server) => {
 
         }) // end of on disconnect
 
-        //function for meeting starting alarm code start
-        // setInterval( () =>{
-        //     meetingModel.find()
-        //         .select(' -__v -_id')
-        //         .lean()
-        //         .exec((err, result) => {
-        //             if (err) {
-        //                 console.log(err)
-
-        //             } else if (check.isEmpty(result)) {
-
-        //             } else {
-        //                 let minutes = new Date().getMinutes()
-        //                 let hours = new Date().getHours()
-        //                 let month = new Date().getMonth()
-        //                 let day = new Date().getDay()
-
-        //                 for (let meeting of result) {
-        //                     meetingMonth = (new Date(meeting.start).getMonth())
-        //                     meetingDay = (new Date(meeting.start).getDay())
-        //                     if (minutes == meeting.startMinute - 30 && hours == meeting.startHour - 5 && month == meetingMonth && day == meetingDay) {
-        //                         //meetingController.sendAlarmMail(meeting.userId, meeting.title, meeting.adminUserName)
-        //                         data = { adminName: meeting.adminUserName, userId: meeting.userId, title: meeting.title ,minutes: minutes}
-        //                         myIo.emit('alarm', data);
-        //                     }
-        //                 }
-
-        //             }
-        //         })
-
-        // }, 100000)
-        //staring for event starting code is end
-
-
+        
     })
 
 
