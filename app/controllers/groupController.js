@@ -17,8 +17,8 @@ const groupModel = mongoose.model('Group');
 let getSingleGroupDetails = (req, res) => {
 
     groupModel.findOne({ 'groupId': req.query.groupId })
-    .select('-__v -_id')
-    .lean()
+              .populate({path:'users',select:'firstName'})
+              .populate({path:'createdBy',select:'firstName'})
     .exec((err, result) => {
         if (err) {
             logger.error(err.message, 'group Controller: getSingleGroupDetails', 10)

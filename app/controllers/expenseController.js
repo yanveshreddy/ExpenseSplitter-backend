@@ -14,10 +14,10 @@ const ExpenseModel = mongoose.model('Expense');
 
 let getOutstandingBalances =(req,res)=>{
 
-    //let user_Id=JSON.parse(req.query.user_Id);
+    //let user_Id=JSON.parse(req.query.user_Id);mongoose.Types.ObjectId(
 
-    ExpenseModel.aggregate([{$match:{'paidBy.user':mongoose.Types.ObjectId(req.params.user_Id)}}
-    ,{$group:{'user_Id':mongoose.Types.ObjectId('paidBy.user'),'totalAmountLent':{$sum:['paidBy.amountLent']}}}
+    ExpenseModel.aggregate([{$match:{'paidBy.user':req.params.user_Id}}
+    ,{$group:{'_id':'paidBy.user','totalAmountLent':{$sum:'paidBy.amountLent'}}}
     ]).exec((err,result)=>{
 
         if (err) {
