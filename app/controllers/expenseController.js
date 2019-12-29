@@ -15,65 +15,6 @@ let eventEmitter = new events.EventEmitter();
 const ExpenseHistoryModel = mongoose.model('ExpenseHistory')
 /*Controller Functions */
 
-let getUserOutstandingLent =(req,res)=>{
-
-   // const user_Id=JSON.parse(req.params.user_Id);
-
-        ExpenseModel.aggregate([ {$unwind: '$paidBy'},
-        {$match:{'paidBy.user':mongoose.Types.ObjectId(req.params.user_Id)}},
-        {$group:{'_id':'$paidBy.user','totalAmountLent':{$sum:'$paidBy.amountLent'}}}])
-       .exec((err,result)=>{
-
-        if (err) {
-            logger.error(err.message, 'expense Controller: getUserOutstandingLent', 10)
-            let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
-            res.send(apiResponse);
-        }
-        else if (check.isEmpty(result)) {
-            logger.info('No expense Found', 'expense Controller: getUserOutstandingLent')
-            let apiResponse = response.generate(true, "No records found", 404, null);
-            res.send(apiResponse);
-        }
-        else {
-            let apiResponse = response.generate(false, "data Found", 200, result);
-
-            logger.info(result)
-            res.send(apiResponse);
-        }
-    
-    })
-
-    }
-
-    let getUserOutstandingSpent =(req,res)=>{
-
-      //const user_Id=JSON.parse(req.params.user_Id);
-        ExpenseModel.aggregate([ {$unwind: '$usersInvolved'},
-        {$match:{'usersInvolved.user':mongoose.Types.ObjectId(req.params.user_Id)}},
-        {$group:{'_id':'$usersInvolved.user','totalAmountSpent':{$sum:'$usersInvolved.amountSpent'}}}])
-             .exec((err,result)=>{
-      
-              if (err) {
-                  logger.error(err.message, 'expense Controller: getUserOutstandingSpent', 10)
-                  let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
-                  res.send(apiResponse);
-              }
-              else if (check.isEmpty(result)) {
-                  logger.info('No expense Found', 'expense Controller: getUserOutstandingSpent')
-                  let apiResponse = response.generate(true, "No records found", 404, null);
-                  res.send(apiResponse);
-              }
-              else {
-                  let apiResponse = response.generate(false, "data Found", 200, result);
-      
-                  logger.info(result)
-                  res.send(apiResponse);
-              }
-          
-          })
-      
-          }
-      
 
 // start getSingleExpenseDetails function 
 
@@ -165,9 +106,11 @@ let createExpense = (req, res) => {
 // start updateExpense function 
 
 let updateExpense = (req, res) => {
+    // req.body.paidBy.user = mongoose.Types.ObjectId(req.body.paidBy.user);
+    // req.body.usersInvolved.user = mongoose.Types.ObjectId(req.body.usersInvolved.user);
 
-    let usersInvolved1=JSON.parse(req.body.usersInvolved);
-    let paidBy1=JSON.parse(req.body.paidBy);
+    // let usersInvolved1=JSON.parse(req.body.usersInvolved);
+    // let paidBy1=JSON.parse(req.body.paidBy);
 
     // let optionsobj = { groupId: req.body.groupId,
     // expenseTitle:req.body.expenseTitle,
@@ -181,7 +124,7 @@ let updateExpense = (req, res) => {
     logger.info(req.body.expenseAmount);
     logger.info("ExpenseID"+req.params.expenseId);
 
-    ExpenseModel.updateOne(
+    ExpenseModel.findOneAndUpdate(
 	{
 		'expenseId' : req.params.expenseId
 	},
@@ -191,10 +134,10 @@ let updateExpense = (req, res) => {
 			"expenseTitle" : req.body.expenseTitle,
             "expenseDescription" : req.body.expenseDescription,
             "expenseAmount":req.body.expenseAmount,
-            "paidBy": paidBy1,
-            "usersInvolved":usersInvolved1
+            "paidBy": req.body.paidBy,
+            "usersInvolved":req.body.usersInvolved
 		}
-	}
+	},{new: true}
    ).exec((err, result) => {
     if (err) {
         logger.error(err.message, 'expense Controller: updateexpense', 10)
@@ -459,15 +402,75 @@ eventEmitter.on('sendExpenseDeleteMail', (data) => {
     }
 });
 
+let getUserOutstandingLent =(req,res)=>{
 
+    // const user_Id=JSON.parse(req.params.user_Id);
+ 
+         ExpenseModel.aggregate([ {$unwind: '$paidBy'},
+         {$match:{'paidBy.user':mongoose.Types.ObjectId(req.params.user_Id)}},
+         {$group:{'_id':'$paidBy.user','totalAmountLent':{$sum:'$paidBy.amountLent'}}}])
+        .exec((err,result)=>{
+ 
+         if (err) {
+             logger.error(err.message, 'expense Controller: getUserOutstandingLent', 10)
+             let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
+             res.send(apiResponse);
+         }
+         else if (check.isEmpty(result)) {
+             logger.info('No expense Found', 'expense Controller: getUserOutstandingLent')
+             let apiResponse = response.generate(true, "No records found", 404, null);
+             res.send(apiResponse);
+         }
+         else {
+             let apiResponse = response.generate(false, "data Found", 200, result);
+ 
+             logger.info(result)
+             res.send(apiResponse);
+         }
+     
+     })
+ 
+     }
+ 
+     let getUserOutstandingSpent =(req,res)=>{
+ 
+       //const user_Id=JSON.parse(req.params.user_Id);
+         ExpenseModel.aggregate([ {$unwind: '$usersInvolved'},
+         {$match:{'usersInvolved.user':mongoose.Types.ObjectId(req.params.user_Id)}},
+         {$group:{'_id':'$usersInvolved.user','totalAmountSpent':{$sum:'$usersInvolved.amountSpent'}}}])
+              .exec((err,result)=>{
+       
+               if (err) {
+                   logger.error(err.message, 'expense Controller: getUserOutstandingSpent', 10)
+                   let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
+                   res.send(apiResponse);
+               }
+               else if (check.isEmpty(result)) {
+                   logger.info('No expense Found', 'expense Controller: getUserOutstandingSpent')
+                   let apiResponse = response.generate(true, "No records found", 404, null);
+                   res.send(apiResponse);
+               }
+               else {
+                   let apiResponse = response.generate(false, "data Found", 200, result);
+       
+                   logger.info(result)
+                   res.send(apiResponse);
+               }
+           
+           })
+       
+           }
 
 
 module.exports = {
-    getUserOutstandingLent:getUserOutstandingLent,
-    getUserOutstandingSpent:getUserOutstandingSpent,
+
     getSingleExpenseDetails: getSingleExpenseDetails,
     getAllExpenses: getAllExpenses,
     updateExpense: updateExpense,
     createExpense: createExpense,
-    deleteExpense:deleteExpense
+    deleteExpense:deleteExpense,
+
+    getUserOutstandingLent:getUserOutstandingLent,
+    getUserOutstandingSpent:getUserOutstandingSpent,
+    
 }// end exports

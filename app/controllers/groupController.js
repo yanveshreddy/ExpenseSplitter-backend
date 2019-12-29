@@ -8,6 +8,7 @@ const check = require('../libs/checkLib');
 const nodemailer = require('nodemailer');
 
 const groupModel = mongoose.model('Group');
+const ExpenseModel= mongoose.model('Expense')
 
 
 /*Controller Functions */
@@ -208,6 +209,82 @@ let getAllGroups = (req, res) => {
 
 //end getAllgroups function
 /****************************************************************************************************/
+let groupOutstandingLent =(req,res) =>{
+ 
+    ExpenseModel.aggregate([ {$match:{'groupId':req.params.groupId}},{$unwind: '$paidBy'},
+    {$group:{'_id':'$paidBy.user','totalAmountLent':{$sum:'$paidBy.amountLent'}}},
+    { $lookup: {from: 'users', localField: '_id', foreignField: '_id', as: 'user'}},
+          {
+            $project: {
+                totalAmountLent:1,
+              user: {
+                firstName: 1 
+              }
+            }
+          },
+    ])
+    .exec((err,result)=>{
+
+        if (err) {
+            logger.error(err.message, 'expense Controller: groupOutstandingLent', 10)
+            let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
+            res.send(apiResponse);
+        }
+        else if (check.isEmpty(result)) {
+            logger.info('No expense Found', 'expense Controller: groupOutstandingLent')
+            let apiResponse = response.generate(true, "No records found", 404, null);
+            res.send(apiResponse);
+        }
+        else {
+            let apiResponse = response.generate(false, "data Found", 200, result);
+
+            logger.info(result)
+            res.send(apiResponse);
+        }
+    
+    })
+
+
+  }
+
+  let groupOutstandingSpent =(req,res) =>{
+
+   ExpenseModel.aggregate([ {$match:{'groupId':req.params.groupId}},{$unwind: '$usersInvolved'},
+   {$group:{'_id':'$usersInvolved.user','totalAmountSpent':{$sum:'$usersInvolved.amountSpent'}}},
+   { $lookup: {from: 'users', localField: '_id', foreignField: '_id', as: 'user'}},
+         {
+           $project: {
+            totalAmountSpent:1,
+             user: {
+               firstName: 1 
+             }
+           }
+         },
+   ])
+   .exec((err,result)=>{
+
+       if (err) {
+           logger.error(err.message, 'expense Controller: groupOutstandingSpent', 10)
+           let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
+           res.send(apiResponse);
+       }
+       else if (check.isEmpty(result)) {
+           logger.info('No expense Found', 'expense Controller: groupOutstandingSpent')
+           let apiResponse = response.generate(true, "No records found", 404, null);
+           res.send(apiResponse);
+       }
+       else {
+           let apiResponse = response.generate(false, "data Found", 200, result);
+
+           logger.info(result)
+           res.send(apiResponse);
+       }
+   
+   })
+
+
+ }
+
 
 module.exports = {
     
@@ -216,5 +293,7 @@ module.exports = {
     updateGroup: updateGroup,
     createGroup: createGroup,
     getAllGroupsForaUser:getAllGroupsForaUser,
-    getAllUsersForAGroup:getAllUsersForAGroup
+    getAllUsersForAGroup:getAllUsersForAGroup,
+    groupOutstandingLent:groupOutstandingLent,
+    groupOutstandingSpent:groupOutstandingSpent
 }// end exports

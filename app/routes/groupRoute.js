@@ -280,6 +280,9 @@ app.get(`${baseUrl}/getAllGroupsForaUser`,auth.isAuthorized,groupController.getA
      *      "data":null
      *    }
      */
+    app.get(`${baseUrl}/:groupId/groupOutstandingLent`, groupController.groupOutstandingLent);
+
+    app.get(`${baseUrl}/:groupId/groupOutstandingSpent`, groupController.groupOutstandingSpent);
 
    
 }
