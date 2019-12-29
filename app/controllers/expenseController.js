@@ -15,26 +15,28 @@ let eventEmitter = new events.EventEmitter();
 const ExpenseHistoryModel = mongoose.model('ExpenseHistory')
 /*Controller Functions */
 
-let getOutstandingBalances =(req,res)=>{
+let getUserOutstandingLent =(req,res)=>{
 
-    //let user_Id=JSON.parse(req.query.user_Id);mongoose.Types.ObjectId(
+   // const user_Id=JSON.parse(req.params.user_Id);
 
-    ExpenseModel.aggregate([{$match:{'paidBy.user':req.params.user_Id}}
-    ,{$group:{'_id':'paidBy.user','totalAmountLent':{$sum:'paidBy.amountLent'}}}
-    ]).exec((err,result)=>{
+        ExpenseModel.aggregate([ {$unwind: '$paidBy'},
+        {$match:{'paidBy.user':mongoose.Types.ObjectId(req.params.user_Id)}},
+        {$group:{'_id':'$paidBy.user','totalAmountLent':{$sum:'$paidBy.amountLent'}}}])
+       .exec((err,result)=>{
 
         if (err) {
-            logger.error(err.message, 'expense Controller: getOutstandingBalances', 10)
+            logger.error(err.message, 'expense Controller: getUserOutstandingLent', 10)
             let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
             res.send(apiResponse);
         }
         else if (check.isEmpty(result)) {
-            logger.info('No expense Found', 'expense Controller: getOutstandingBalances')
+            logger.info('No expense Found', 'expense Controller: getUserOutstandingLent')
             let apiResponse = response.generate(true, "No records found", 404, null);
             res.send(apiResponse);
         }
         else {
             let apiResponse = response.generate(false, "data Found", 200, result);
+
             logger.info(result)
             res.send(apiResponse);
         }
@@ -43,6 +45,35 @@ let getOutstandingBalances =(req,res)=>{
 
     }
 
+    let getUserOutstandingSpent =(req,res)=>{
+
+      //const user_Id=JSON.parse(req.params.user_Id);
+        ExpenseModel.aggregate([ {$unwind: '$usersInvolved'},
+        {$match:{'usersInvolved.user':mongoose.Types.ObjectId(req.params.user_Id)}},
+        {$group:{'_id':'$usersInvolved.user','totalAmountSpent':{$sum:'$usersInvolved.amountSpent'}}}])
+             .exec((err,result)=>{
+      
+              if (err) {
+                  logger.error(err.message, 'expense Controller: getUserOutstandingSpent', 10)
+                  let apiResponse = response.generate(true, "Failed to fetch Details", 500, null);
+                  res.send(apiResponse);
+              }
+              else if (check.isEmpty(result)) {
+                  logger.info('No expense Found', 'expense Controller: getUserOutstandingSpent')
+                  let apiResponse = response.generate(true, "No records found", 404, null);
+                  res.send(apiResponse);
+              }
+              else {
+                  let apiResponse = response.generate(false, "data Found", 200, result);
+      
+                  logger.info(result)
+                  res.send(apiResponse);
+              }
+          
+          })
+      
+          }
+      
 
 // start getSingleExpenseDetails function 
 
@@ -144,6 +175,7 @@ let updateExpense = (req, res) => {
     // expenseAmount: req.body.expenseAmount,
     // createdBy: req.body.createdBy,
     // paidBy: paidBy1,
+
     // usersInvolved: usersInvolved
     // }
     logger.info(req.body.expenseAmount);
@@ -431,7 +463,8 @@ eventEmitter.on('sendExpenseDeleteMail', (data) => {
 
 
 module.exports = {
-    getOutstandingBalances:getOutstandingBalances,
+    getUserOutstandingLent:getUserOutstandingLent,
+    getUserOutstandingSpent:getUserOutstandingSpent,
     getSingleExpenseDetails: getSingleExpenseDetails,
     getAllExpenses: getAllExpenses,
     updateExpense: updateExpense,
