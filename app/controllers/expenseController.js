@@ -231,6 +231,26 @@ let deleteExpense = (req, res) => {
 
 }
 
+let getExpenseHistory =(req,res)  =>{
+
+    ExpenseHistoryModel.find({ 'expenseId': req.params.expenseId })
+    .populate({ path: 'actionDoneBy', select: 'firstName' })
+    .exec((err, result) => {
+
+        if (err) {
+            let apiResponse = response.generate(true, 'Failed to fetch Expense ', 403, null)
+            res.send(apiResponse)
+        } else if (check.isEmpty(result)) {
+            let apiResponse = response.generate(true, 'Expense not found', 500, null)
+            res.send(apiResponse)
+        } else {
+            let apiResponse = response.generate(false, 'Expense History Found', 200, result)
+            res.send(apiResponse)
+        }
+    })
+
+}
+
 /****************************************************************************************************/
 eventEmitter.on('saveCreateExpenseHistory',(data) =>{
 
@@ -469,7 +489,7 @@ module.exports = {
     updateExpense: updateExpense,
     createExpense: createExpense,
     deleteExpense:deleteExpense,
-
+    getExpenseHistory:getExpenseHistory,
     getUserOutstandingLent:getUserOutstandingLent,
     getUserOutstandingSpent:getUserOutstandingSpent,
     

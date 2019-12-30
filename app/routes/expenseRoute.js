@@ -272,6 +272,9 @@ module.exports.setRouter = (app) => {
      *      "data":null
      *    }
      */
+
+    app.get(`${baseUrl}/:expenseId/getExpenseHistory`,auth.isAuthorized,expenseController.getExpenseHistory);
+    
     app.get(`${baseUrl}/:user_Id/getUserOutstandingLent`,auth.isAuthorized, expenseController.getUserOutstandingLent);
 
     app.get(`${baseUrl}/:user_Id/getUserOutstandingSpent`,auth.isAuthorized, expenseController.getUserOutstandingSpent);

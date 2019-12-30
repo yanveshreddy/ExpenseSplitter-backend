@@ -9,6 +9,7 @@ const mongoose = require('mongoose'),
 
 let expenseHistorySchema = new Schema({
     expenseId:{type:String,required:true},
+    expenseName:{type:String,required:true},
     expenseAmount:{type:String},
     actionType: {type: String, require: true},
     actionDoneBy: { type: Schema.Types.ObjectId,ref:'User', required: true },
