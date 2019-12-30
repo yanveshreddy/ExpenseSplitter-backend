@@ -6,7 +6,7 @@ const logger = require('./loggerLib');
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-          user: 'anveshreddy',
+          user: 'vc16anvesh@gmail.com',
           pass: 'sehwag219' // naturally, replace both with your real credentials or an application-specific password
         }
       });

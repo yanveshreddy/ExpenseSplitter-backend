@@ -92,8 +92,10 @@ let createExpense = (req, res) => {
             let apiResponse = response.generate(false, "created succesfully", 200, result);
             res.send(apiResponse);
             // logger.info(result);
-            eventEmitter.emit('saveCreateExpenseHistory',result)
-            eventEmitter.emit('sendExpenseCreatedMail', result);
+            eventEmitter.emit('saveCreateExpenseHistory',result);
+                eventEmitter.emit('sendExpenseCreatedMail', result);
+
+         
         }
 
     })
@@ -252,16 +254,17 @@ let getExpenseHistory =(req,res)  =>{
 }
 
 /****************************************************************************************************/
+
 eventEmitter.on('saveCreateExpenseHistory',(data) =>{
 
         let newExpenseHistory =new ExpenseHistoryModel({
 
             expenseId:data.expenseId,
+            expenseName:data.expenseTitle,
             expenseAmount:data.expenseAmount,
             actionType: "create expense",
-            actionDoneBy: data.createdBy.firsName,
+            actionDoneBy: data.createdBy,
             message: "created expense"
-
 
         })
         newExpenseHistory.save((err,result)=>{
@@ -269,7 +272,7 @@ eventEmitter.on('saveCreateExpenseHistory',(data) =>{
                 logger.error(err.message, 'expense Controller: saveCreateExpenseHistory', 10)
             }
             else{
-                logger.error("history saved succesfully", 'expense Controller: saveCreateExpenseHistory')
+                logger.error("history saved succesfully", 'expense Controller: saveCreateExpenseHistory');
             }
         })
 
@@ -279,9 +282,10 @@ eventEmitter.on('saveUpdateExpenseHistory',(data) =>{
     let newExpenseHistory =new ExpenseHistoryModel({
 
         expenseId:data.expenseId,
+        expenseName:data.expenseTitle,
         expenseAmount:data.expenseAmount,
         actionType: "update Expense",
-        actionDoneBy: data.createdBy.firsName,
+        actionDoneBy: data.createdBy,
         message: "updated Expense"
 
 
@@ -303,8 +307,9 @@ eventEmitter.on('saveDeleteExpenseHistory',(data) =>{
 
         expenseId:data.expenseId,
         expenseAmount:data.expenseAmount,
+        expenseName:data.expenseTitle,
         actionType: "delete Expense",
-        actionDoneBy: data.createdBy.firsName,
+        actionDoneBy: data.createdBy,
         message: "deleted Expense"
 
 
