@@ -111,8 +111,8 @@ let updateExpense = (req, res) => {
     // req.body.paidBy.user = mongoose.Types.ObjectId(req.body.paidBy.user);
     // req.body.usersInvolved.user = mongoose.Types.ObjectId(req.body.usersInvolved.user);
 
-    // let usersInvolved1=JSON.parse(req.body.usersInvolved);
-    // let paidBy1=JSON.parse(req.body.paidBy);
+    let usersInvolved1=JSON.parse(req.body.usersInvolved);
+    let paidBy1=JSON.parse(req.body.paidBy);
 
     // let optionsobj = { groupId: req.body.groupId,
     // expenseTitle:req.body.expenseTitle,
@@ -123,62 +123,78 @@ let updateExpense = (req, res) => {
 
     // usersInvolved: usersInvolved
     // }
-    logger.info(req.body.expenseAmount);
-    logger.info("ExpenseID"+req.params.expenseId);
+   // logger.info(req.body.expenseAmount);
+    logger.info("anveshhhhhhhhhh"+paidBy1);
+    logger.info("reddddddddddddyyyyyyy"+usersInvolved1);
 
-    ExpenseModel.findOneAndUpdate(
-	{
-		'expenseId' : req.params.expenseId
-	},
-	{
-		$set :
-		{
-			"expenseTitle" : req.body.expenseTitle,
-            "expenseDescription" : req.body.expenseDescription,
-            "expenseAmount":req.body.expenseAmount,
-            "paidBy": req.body.paidBy,
-            "usersInvolved":req.body.usersInvolved
-		}
-	},{new: true}
-   ).exec((err, result) => {
-    if (err) {
-        logger.error(err.message, 'expense Controller: updateexpense', 10)
-        let apiResponse = response.generate(true, "Failed to find expense Details", 500, null);
-        res.send(apiResponse);
-    }
-    else if (check.isEmpty(result)) {
-        logger.info('No expense Found', 'expense Controller: updateexpense')
-        let apiResponse = response.generate(true, "No expense found", 404, null);
-        res.send(apiResponse);
-    }
-    else {
-        let apiResponse = response.generate(false, "expense updated succesfully", 200, result);
-        res.send(apiResponse);
-        //console.log(meetingId);
-
-     ExpenseModel.findOne({ 'expenseId': req.params.expenseId })
-     .populate({ path: 'createdBy', select: 'firstName' })
-                .populate({path:'paidBy.user',select:'firstName'})
-                .populate({path:'usersInvolved.user',select:'firstName'})
-                .exec((err, data) => {
-        if (err) {
-            logger.error(err.message, 'expense Controller: updateExpense', 10)
-            //let apiResponse = response.generate(true, "Failed to find expense Details", 500, null);
-           // res.send(apiResponse);
-        }
-        else if (check.isEmpty(data)) {
-            logger.info('No expense Found', 'expense Controller: updateExpense')
-           // let apiResponse = response.generate(true, "No expense found", 404, null);
-            //res.send(apiResponse);
-        }
-        else {
-
-                        eventEmitter.emit('saveUpdateExpenseHistory',data);
-                        eventEmitter.emit('sendExpenseUpdateMail', data);
+    ExpenseModel.findOneAndUpdate({'expenseId': req.params.expenseId}, 
+    { $set :  { 'paidBy': [],'usersInvolved': [] }}    
+        ,{new: true}
+        ).exec((err, result) => {
+            if(err)
+            {
+                logger.error(err.message, 'expense Controller: updateexpense', 10)
             }
-        })   
-        }
-    })
+            else{
+                logger.info('emptied arrays', 'expense Controller: updateExpense',result)
+
+                ExpenseModel.findOneAndUpdate(
+                    {
+                        'expenseId' : req.params.expenseId
+                    },
+                    {
+                        $set :
+                        {
+                            "expenseTitle" : req.body.expenseTitle,
+                            "expenseDescription" : req.body.expenseDescription,
+                            "expenseAmount":req.body.expenseAmount,
+                            "paidBy": paidBy1,
+                            "usersInvolved":usersInvolved1
+                        }
+                    },{new: true}
+                   ).exec((err, result) => {
+                    if (err) {
+                        logger.error(err.message, 'expense Controller: updateexpense', 10)
+                        let apiResponse = response.generate(true, "Failed to find expense Details", 500, null);
+                        res.send(apiResponse);
+                    }
+                    else if (check.isEmpty(result)) {
+                        logger.info('No expense Found', 'expense Controller: updateexpense')
+                        let apiResponse = response.generate(true, "No expense found", 404, null);
+                        res.send(apiResponse);
+                    }
+                    else {
+                        let apiResponse = response.generate(false, "expense updated succesfully", 200, result);
+                        res.send(apiResponse);
+                        //console.log(meetingId);
+                
+                     ExpenseModel.findOne({ 'expenseId': req.params.expenseId })
+                     .populate({ path: 'createdBy', select: 'firstName' })
+                                .populate({path:'paidBy.user',select:'firstName'})
+                                .populate({path:'usersInvolved.user',select:'firstName'})
+                                .exec((err, data) => {
+                        if (err) {
+                            logger.error(err.message, 'expense Controller: updateExpense', 10)
+                            //let apiResponse = response.generate(true, "Failed to find expense Details", 500, null);
+                           // res.send(apiResponse);
+                        }
+                        else if (check.isEmpty(data)) {
+                            logger.info('No expense Found', 'expense Controller: updateExpense')
+                           // let apiResponse = response.generate(true, "No expense found", 404, null);
+                            //res.send(apiResponse);
+                        }
+                        else {
+                
+                                        eventEmitter.emit('saveUpdateExpenseHistory',data);
+                                        eventEmitter.emit('sendExpenseUpdateMail', data);
+                            }
+                        })   
+                        }
+                    })
+            }
+        });
+
+  
 }
 //end updateExpense function
 /****************************************************************************************************/
@@ -211,7 +227,8 @@ let deleteExpense = (req, res) => {
 
     ExpenseModel.findOneAndRemove({ 'expenseId': req.params.expenseId }).select(' -__v -_id').exec((err, result) => {
         if (err) {
-            console.log(err)
+         
+            //console.log(err)
             logger.error(err.message, 'expenseController: deleteExpense', 10)
             let apiResponse = response.generate(true, 'Failed To delete expense', 500, null)
             res.send(apiResponse)
@@ -345,11 +362,13 @@ eventEmitter.on('sendExpenseCreatedMail', (data) => {
             else  {
                   
                     let users=groupDetails.users;
-                    console.log(users);
+                  //  console.log(users);
                     let toList=new Array();
                    
                     users.forEach(element => {
-                            logger.info(element.email)
+                           //
+                           
+                           logger.info(element.email)
                          toList.push(element.email);
                            
                         })
@@ -449,7 +468,7 @@ let getUserOutstandingLent =(req,res)=>{
          else {
              let apiResponse = response.generate(false, "data Found", 200, result);
  
-             logger.info(result)
+           //  logger.info(result)
              res.send(apiResponse);
          }
      
@@ -478,7 +497,7 @@ let getUserOutstandingLent =(req,res)=>{
                else {
                    let apiResponse = response.generate(false, "data Found", 200, result);
        
-                   logger.info(result)
+                 //  logger.info(result)
                    res.send(apiResponse);
                }
            

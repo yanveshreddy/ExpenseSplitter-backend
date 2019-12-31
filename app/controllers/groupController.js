@@ -69,7 +69,8 @@ let createGroup = (req, res) => {
         else {
             let apiResponse = response.generate(false, "created succesfully", 200, result);
             res.send(apiResponse);
-            logger.info(result);
+          //
+         //   logger.info(result);
             //eventEmitter.emit('sendgroupCreatedMail', result);
         }
 
@@ -103,7 +104,7 @@ let updateGroup = (req, res) => {
         else {
             let apiResponse = response.generate(false, "group updated succesfully", 200, result);
             res.send(apiResponse);
-            console.log(groupId);
+           // console.log(groupId);
 
             groupModel.findOne({ 'groupId': groupId }).exec((err, result) => {
 
@@ -115,7 +116,7 @@ let updateGroup = (req, res) => {
                 else {
                     // let apiResponse = response.generate(false, "Details Found", 200, result);
                     // res.send(apiResponse);
-                    console.log(result);
+                 //   console.log(result);
                     if(result){
                         eventEmitter.emit('sendgroupUpdateMail', result);
                     }
@@ -145,7 +146,7 @@ let getAllUsersForAGroup = (req, res) => {
                 res.send(apiResponse)
             } else {
                 let apiResponse = response.generate(false, 'List of users in a group', 200, result)
-                logger.info(result);
+                //logger.info(result);
                 res.send(apiResponse)
             }
         })
@@ -176,7 +177,7 @@ let getAllGroupsForaUser = (req, res) => {
                     res.send(apiResponse)
                 } else {
                     let apiResponse = response.generate(false, 'List of groups', 200, result);
-                    logger.info(result);
+                   // logger.info(result);
                     res.send(apiResponse)
                 }
             })
@@ -238,7 +239,7 @@ let groupOutstandingLent =(req,res) =>{
         else {
             let apiResponse = response.generate(false, "data Found", 200, result);
 
-            logger.info(result)
+           // logger.info(result)
             res.send(apiResponse);
         }
     
@@ -276,7 +277,7 @@ let groupOutstandingLent =(req,res) =>{
        else {
            let apiResponse = response.generate(false, "data Found", 200, result);
 
-           logger.info(result)
+        //   logger.info(result)
            res.send(apiResponse);
        }
    
